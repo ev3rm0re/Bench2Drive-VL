@@ -1,262 +1,288 @@
-![B2DVL Header](./assets/Bench2Drive-VL.png)
+<p align="center"> <img src="./assets/Bench2Drive-VL.png" alt="B2DVL Header" style="max-width: 100%;" /> </p> <h2 align="center"><strong>Full-Stack Software for Closed-Loop Autonomous Driving with Vision Language Models</strong></h2><p align="center">Powered by the <code>DriveCommenter</code> expert model and CARLA simulator. </p> <p align="center"> <a href="https://thinklab-sjtu.github.io/Bench2Drive-VL/">📄 Document</a> | <a href="https://huggingface.co/datasets/Telkwevr/Bench2Drive-VL-base">📁 Dataset</a> </p>
 
-🚗 **Bench2Drive-VL** is a closed-loop full-stack benchmark for vision-language models (VLMs) in autonomous driving. In VQA part, our rule-based expert model DriveCommenter is used for generating VQAs' ground truth in CARLA simulator (or from static datasets like Bench2Drive). Original Bench2Drive metrics are used for planning benchmarking.
+## 🧠 Overview
 
-<h2 align="center">
-  <a href="https://thinklab-sjtu.github.io/Bench2Drive-VL/"> Document</a> |
-  <a href="https://huggingface.co/datasets/Telkwevr/Bench2Drive-VL-base"> Dataset</a>
-</h2>
+**Bench2Drive-VL** is a full-stack software suite designed to accelerate the development and evaluation of Vision-Language Models for Autonomous Driving (**VLM4AD**).  
+It supports the entire lifecycle—from dataset generation and annotation, model training, to closed-loop evaluation in simulation environments—focusing on modularity, reproducibility, and usability for both research and real-world applications.
 
-![B2DVL Structure](./assets/struct_new.png)
+It includes:
 
-📚 Docker support is on the way...
+- 📦 **Annotated Dataset & Dynamic Label Annotator**  
+  Automatically generates frame-level VQA pairs for both low-level perception (objects, signs, lanes) and high-level reasoning using the `DriveCommenter` module.
 
-![B2DVL Modules](./assets/modules_new.png)
+- 🧩 **Graph-based Reasoning & Chain-of-Thought Tools**  
+  Define, visualize, and test custom graph-of-thought pipelines to guide VLMs through reasoning tasks.
 
-## How to use
+- 🖼️ **Visualization & Human-in-the-loop GUIs**  
+  Interactive GUIs to explore model predictions, revise annotations, and add new QA samples through visual debugging interfaces.
 
-### Set up the environment
+- 🤖 **Multimodal Baselines & Inference Tools**  
+  Built-in models supporting diverse input formats (e.g., RGB, bounding boxes, language prompts) for fast prototyping and benchmarking.
 
-1. Install CARLA:
+- 🔄 **Closed-Loop Evaluation Benchmark in CARLA**  
+  Seamless integration with the CARLA simulator and web-based APIs allows realistic, interactive, and scalable evaluation of VLMs in autonomous driving scenarios.
 
-    ```bash
-    mkdir carla
-    cd carla
-    wget https://carla-releases.s3.us-east-005.backblazeb2.com/Linux/CARLA_0.9.15.tar.gz
-    tar -xvf CARLA_0.9.15.tar.gz
-    cd Import && wget https://carla-releases.s3.us-east-005.backblazeb2.com/Linux/AdditionalMaps_0.9.15.tar.gz
-    cd .. && bash ImportAssets.sh
-    export CARLA_ROOT=YOUR_CARLA_PATH
-    echo "$CARLA_ROOT/PythonAPI/carla/dist/carla-0.9.15-py3.7-linux-x86_64.egg" >> YOUR_CONDA_PATH/envs/YOUR_CONDA_ENV_NAME/lib/python3.7/site-packages/carla.pth # python 3.8 also works well, please set YOUR_CONDA_PATH and YOUR_CONDA_ENV_NAME
-    ```
+- 📦 **Docker Support & Detailed Documentation**  
+  Easy-to-use Docker environments and thorough setup guides ensure a smooth installation and testing experience across platforms.
 
-2. After installing CARLA, write an `env.sh`:
+> 🐳 Docker support is on the way...
 
-   ```bash
-   export CARLA_ROOT=/path/to/your/carla
+<p align="center">
+  <img src="./assets/abstract_module.png" alt="B2DVL Modules" style="max-width: 80%;" />
+</p>
 
-   export CARLA_SERVER=${CARLA_ROOT}/CarlaUE4.sh
-   export PYTHONPATH=${CARLA_ROOT}/PythonAPI
-   export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI/carla
-   export PYTHONPATH=$PYTHONPATH:$CARLA_ROOT/PythonAPI/carla/dist/carla-0.9.15-py3.7-linux-x86_64.egg
+---
 
-   export WORK_DIR=/path/to/this/repo
-   export PYTHONPATH=$PYTHONPATH:${WORK_DIR}/scenario_runner
-   export PYTHONPATH=$PYTHONPATH:${WORK_DIR}/leaderboard
-   export PYTHONPATH=$PYTHONPATH:${WORK_DIR}/B2DVL_Adapter
-   export SCENARIO_RUNNER_ROOT=${WORK_DIR}/scenario_runner
-   export LEADERBOARD_ROOT=${WORK_DIR}/leaderboard
+## ⚙️ Getting Started
 
-   export VQA_GEN=1
-   export STRICT_MODE=1
-   # DriveCommenter drives back the ego vehicle after circumventing obstacles if STRICT_MODE > 0,
-   # must set to true if doing closed-loop eval.
-   ```
+### 🔧 1. Environment Setup
 
-3. Make sure you have the correct environment variables:
+#### Install CARLA
 
-   ```shell
-   source ./env.sh
-   ```
+```bash
+mkdir carla && cd carla
+wget https://carla-releases.s3.us-east-005.backblazeb2.com/Linux/CARLA_0.9.15.tar.gz
+tar -xvf CARLA_0.9.15.tar.gz
+cd Import
+wget https://carla-releases.s3.us-east-005.backblazeb2.com/Linux/AdditionalMaps_0.9.15.tar.gz
+cd .. && bash ImportAssets.sh
+```
 
-### Closed-Loop Inference
+Set environment variables:
 
-1. Write a vlm config file (examples can be found under `./vlm_config`):
-   
-   *This is a JSON file, so don't forget to delete all comments!*
-   
-   *Question id please refer to [document](./docs/qids.md).*
+```bash
+export CARLA_ROOT=YOUR_CARLA_PATH
+echo "$CARLA_ROOT/PythonAPI/carla/dist/carla-0.9.15-py3.7-linux-x86_64.egg" >> YOUR_CONDA_PATH/envs/YOUR_CONDA_ENV_NAME/lib/python3.7/site-packages/carla.pth
+```
 
-   *Make sure you include question 50 because action module requires its answer.*
+#### Write `env.sh`
 
-    ```java
-    {
-        "TASK_CONFIGS": {
-            "FRAME_PER_SEC": 10 // sensor saving frequency
-        },
-        "INFERENCE_BASICS": {
-            "INPUT_WINDOW": 1, // frame count of given image input
-            "CONVERSATION_WINDOW": 1, // not used anymore, to be removed
-            "USE_ALL_CAMERAS": false, // true if use all cameras as input
-            "USE_BEV": false, // true if use bev as input
-            "NO_HISTORY_MODE": false // do not inherit context of previous VQAs
-        },
-        "CHAIN": { // for inference
-            "NODE": [19, 15, 7, 24, 13, 47, 8, 43, 50],
-            "EDGE": { // "pred": succ
-                "19": [24, 13, 8],
-                "15": [7, 8],
-                "7": [8],
-                "24": [13, 47],
-                "13": [47, 8, 43],
-                "47": [8],
-                "8": [43],
-                "43": [50],
-                "50": []
-            },
-            "INHERIT": { // inherit context from last frame
-                "19": [43, 7],
-                "15": [7]
-            },
-            "USE_GT": [24] // questions which use ground truth as answer
-        },
-        "CONTROL_RATE": 2.0, // intervene freq of vlm
-        "MODEL_NAME": "api", // model name
-        "MODEL_PATH": "../model_zoo/your_model", // model path
-        "GPU_ID": 0, // the gpu model runs on
-        "PORT": 7023, // web port
-        "IN_CARLA": true,
-        "USE_BASE64": true, // if false, local path is used for transmitting images
-        "NO_PERC_INFO": false // do not pass extra perception info to vlm via prompt
-    }
-    ```
+```bash
+export CARLA_ROOT=/path/to/your/carla
+export CARLA_SERVER=${CARLA_ROOT}/CarlaUE4.sh
+export PYTHONPATH=$PYTHONPATH:${CARLA_ROOT}/PythonAPI:${CARLA_ROOT}/PythonAPI/carla
+export PYTHONPATH=$PYTHONPATH:$CARLA_ROOT/PythonAPI/carla/dist/carla-0.9.15-py3.7-linux-x86_64.egg
 
-2. Write start up script:
-   
-    *If you want a quickstart, you can set MINIMAL=1 to run Bench2Drive-VL without VLM.*
+export WORK_DIR=/path/to/this/repo
+export PYTHONPATH=$PYTHONPATH:${WORK_DIR}/scenario_runner:${WORK_DIR}/leaderboard:${WORK_DIR}/B2DVL_Adapter
 
-    ```bash
-    #!/bin/bash
-    BASE_PORT=20082 # CARLA port
-    BASE_TM_PORT=50000
-    BASE_ROUTES=./leaderboard/data/bench2drive220
-    TEAM_AGENT=leaderboard/team_code/data_agent.py
-    BASE_CHECKPOINT_ENDPOINT=./my_checkpoint
-    SAVE_PATH=./eval_v1/
-    GPU_RANK=0 # the gpu carla runs on
-    VLM_CONFIG=/path/to/your_vlm_config.json
-    PORT=$BASE_PORT
-    TM_PORT=$BASE_TM_PORT
-    ROUTES="${BASE_ROUTES}.xml"
-    CHECKPOINT_ENDPOINT="${BASE_CHECKPOINT_ENDPOINT}.json"
-    export MINIMAL=0 # if MINIMAL > 0, DriveCommenter takes control of the ego vehicle,
-    # and vlm server is not needed
-    bash leaderboard/scripts/run_evaluation.sh $PORT $TM_PORT 1 $ROUTES $TEAM_AGENT "." $CHECKPOINT_ENDPOINT $SAVE_PATH "null" $GPU_RANK $VLM_CONFIG
-    ```
+export SCENARIO_RUNNER_ROOT=${WORK_DIR}/scenario_runner
+export LEADERBOARD_ROOT=${WORK_DIR}/leaderboard
 
-3. Start VLM Server (not needed if `MINIMAL`)
+export VQA_GEN=1
+export STRICT_MODE=1
+```
 
-    ```shell
-    python ./B2DVL_Adapter/web_interact_app.py --config /path/to/your/vlm_config.json
-    ```
+#### Activate Environment
 
-4. Start Main module
+```bash
+source ./env.sh
+```
 
-    ```shell
-    bash ./startup.sh
-    ```
+---
 
-### Generate VQAs from static dataset using DriveCommenter
+## 🚀 Run Bench2Drive-VL
 
-1. Write a startup script under `./B2DVL-Adapter`
+### 🧪 Closed-Loop Inference
 
-    ```bash
-    #!/bin/bash
-    export SUBSET=0 # generate from a subset of given dataset
-    export STRICT_MODE=1
-    # DriveCommenter drives back the ego vehicle after circumventing obstacles if STRICT_MODE > 0
-    export SUBSET_PATH=./subset_0.txt # subset file
-    export PROCESSED_PATH=./processed_paths_0.txt # checkpoint file
-    export CACHE_PATH=./.worker_0_cache
-    # DriveCommenter supports dataset in .tar.gz
-    # it will unzip some of the dataset temporarily in cache dir
-    python ./drive_commenter_main.py --data-directory=/path/to/Bench2Drive/dataset --output-graph-directory=./outgraph     --path-maps=${CARLA_ROOT}/CarlaUE4/Content/Carla/Maps     --worker-count=1
-    # We do not recommend using multiple worker here since multi-thread in python is not very good.
-    # You can run multiple DriveCommenter at the same time with different subset and checkpoint files to do the same.
-    ```
+1. **Write VLM config** ([example](./docs/qids.md)):
 
-2. Run it.
+<details>
+<summary>Click to view example</summary>
 
-    ```shell
-    cd ./B2DVL-Adapter
-    bash ./your_startup_script.sh
-    ```
+```jsonc
+{
+  "TASK_CONFIGS": {
+    "FRAME_PER_SEC": 10
+  },
+  "INFERENCE_BASICS": {
+    "INPUT_WINDOW": 1,
+    "USE_ALL_CAMERAS": false,
+    "USE_BEV": false,
+    "NO_HISTORY_MODE": false
+  },
+  "CHAIN": {
+    "NODE": [19, 15, 7, 24, 13, 47, 8, 43, 50],
+    "EDGE": {
+      "19": [24, 13, 8],
+      "15": [7, 8],
+      "7": [8],
+      "24": [13, 47],
+      "13": [47, 8, 43],
+      "47": [8],
+      "8": [43],
+      "43": [50],
+      "50": []
+    },
+    "INHERIT": {
+      "19": [43, 7],
+      "15": [7]
+    },
+    "USE_GT": [24]
+  },
+  "CONTROL_RATE": 2.0,
+  "MODEL_NAME": "api",
+  "MODEL_PATH": "../model_zoo/your_model",
+  "GPU_ID": 0,
+  "PORT": 7023,
+  "IN_CARLA": true,
+  "USE_BASE64": true,
+  "NO_PERC_INFO": false
+}
+```
+</details>
 
-### Open-Loop Inference
+2. **Startup script**
 
-1. Write a config file.
+```bash
+export MINIMAL=0
+bash leaderboard/scripts/run_evaluation.sh $PORT $TM_PORT 1 $ROUTES $TEAM_AGENT "." $CHECKPOINT_ENDPOINT $SAVE_PATH "null" $GPU_RANK $VLM_CONFIG
+```
 
-    ```java
-    {
-        "TASK_CONFIGS": {
-            "INFER_SUBSET": false, // inference a subset of given dataset
-            "USE_CHECKPOINT": true, // record the process of inference
-            "SUBSET_FILE": "./infer_configs/subset.txt", // subset file, leave blank if not used
-            "CHECKPOINT_FILE": "./infer_configs/finished_scenarios.txt", // checkpoint file, leave blank if not used
-            "ENTRY_EXIT_FILE": "./infer_configs/entry_exits.json", // the file which specifies entry and exit point of certain scenario, 
-            // you can create a file with "{}" as content if do not specify
-            "FRAME_PER_SEC": 10 // sensor frame
-        },
-        "INFERENCE_BASICS": {
-            "INPUT_WINDOW": 1,
-            "CONVERSATION_WINDOW": 2,
-            "USE_ALL_CAMERAS": true,
-            "NO_HISTORY_MODE": false,
-            "APPEND_QUESTION": true,
-            "APPENDIX_FILE": "./infer_configs/append_questions.json" // not used now, to be removed
-        },
-        "CHAIN": {
-            "NODE": [43, 50],
-            "EDGE": {
-                "43": [50],
-                "50": []
-            },
-            "INHERIT": {
-                "19": [43, 7],
-                "15": [7]
-            },
-            "USE_GT": []
-        }
-    }
-    ```
+3. **Start VLM server (if not minimal)**
 
-2. Start up inference script:
+```bash
+python ./B2DVL_Adapter/web_interact_app.py --config /path/to/your/vlm_config.json
+```
 
-    ```shell
-    cd ./B2DVL_Adapter
-    python inference.py --model Qwen2.5VL --model_path /path/to/Qwen2.5VL-3B-Instruct --config_dir /path/to/your_infer_config.json --image_dir /path/to/Bench2Drive/dataset --vqa_dir /path/to/vqa/dataset --num_workers 4 --out_dir ./infer_outputs
-    ```
+4. **Launch main module**
 
-### Evaluation
+```bash
+bash ./startup.sh
+```
 
-1. To use your llm api for evaluation, create a `mytoken.py` under `./B2DVL-Adapter`. Take deepseek as an example:
+---
 
-    ```python
-    DEEPSEEK_TOKEN = [
-        "your-token-1", # you can set multiple tokens, and they will be used in a round-robin way
-        "your-token-2"...
-    ]
-    DEEPSEEK_URL = "https://api.deepseek.com/v1"
-    ```
+### 📤 Generate VQAs from Dataset
 
-    Then our script will call this api using `openai` templates.
+1. **Write script under `./B2DVL-Adapter`:**
 
+```bash
+export SUBSET=0
+export STRICT_MODE=1
+export SUBSET_PATH=./subset_0.txt
+export PROCESSED_PATH=./processed_paths_0.txt
+export CACHE_PATH=./.worker_0_cache
 
+python ./drive_commenter_main.py --data-directory=/path/to/Bench2Drive/dataset \
+  --output-graph-directory=./outgraph \
+  --path-maps=${CARLA_ROOT}/CarlaUE4/Content/Carla/Maps \
+  --worker-count=1
+```
 
-2. Write a config file:
+2. **Run script**
 
-    ```java
-    {
-        "EVAL_SUBSET": true, // eval a subset of given infer result folder
-        "USE_CHECKPOINT": false, // use a file to record evaluation process
-        "SUBSET_FILE": "./eval_configs/subset.txt", // subset file
-        "CHECKPOINT_FILE": "./eval_configs/finished_scenarios.txt", // checkpoint file
-        "INFERENCE_RESULT_DIR": "./infer_results", // path to inference results
-        // when doing closed-loop inference, this dir is ./output/infer_results/model_name+input_mode
-        "B2D_DIR": "/path/to/Bench2Drive/dataset", // evaluation script uses annotations in b2d,
-        // when doing closed-loop inference, this dir is ./eval_v1(SAVE_PATH you specified)/model_name+input_mode
-        "ORIGINAL_VQA_DIR": "../Carla_Chain_QA/carla_vqa_gen/vqa_dataset/outgraph",
-        // when doing closed-loop inference, this dir is ./output/vqagen/model_name+input_mode
-        "FRAME_PER_SEC": 10, // sensor fps
-        "LOOK_FUTURE": false // not used now, to be removed
-    }
-    ```
+```bash
+cd ./B2DVL-Adapter
+bash ./your_startup_script.sh
+```
 
-2. Run evaluation script:
+---
 
-    ```shell
-    python eval.py --config_dir ./path/to/eval_config.json --num_workers 4 --out_dir ./eval_outputs
-    ```
+### 🔁 Open-Loop Inference
 
-## License
-All assets and code are under the CC-BY-NC-ND unless specified otherwise.
+1. **Write config file**
+
+<details>
+<summary>Click to view config example</summary>
+
+```jsonc
+{
+  "TASK_CONFIGS": {
+    "INFER_SUBSET": false,
+    "USE_CHECKPOINT": true,
+    "SUBSET_FILE": "./infer_configs/subset.txt",
+    "CHECKPOINT_FILE": "./infer_configs/finished_scenarios.txt",
+    "ENTRY_EXIT_FILE": "./infer_configs/entry_exits.json",
+    "FRAME_PER_SEC": 10
+  },
+  "INFERENCE_BASICS": {
+    "INPUT_WINDOW": 1,
+    "CONVERSATION_WINDOW": 2,
+    "USE_ALL_CAMERAS": true,
+    "NO_HISTORY_MODE": false,
+    "APPEND_QUESTION": true,
+    "APPENDIX_FILE": "./infer_configs/append_questions.json"
+  },
+  "CHAIN": {
+    "NODE": [43, 50],
+    "EDGE": {
+      "43": [50],
+      "50": []
+    },
+    "INHERIT": {
+      "19": [43, 7],
+      "15": [7]
+    },
+    "USE_GT": []
+  }
+}
+```
+
+</details>
+
+2. **Run inference**
+
+```bash
+cd ./B2DVL_Adapter
+python inference.py \
+  --model Qwen2.5VL \
+  --model_path /path/to/Qwen2.5VL-3B-Instruct \
+  --config_dir /path/to/your_infer_config.json \
+  --image_dir /path/to/Bench2Drive/dataset \
+  --vqa_dir /path/to/vqa/dataset \
+  --num_workers 4 \
+  --out_dir ./infer_outputs
+```
+
+---
+
+## 📊 Evaluation
+
+1. **Use your own LLM API**
+
+Create `mytoken.py` under `./B2DVL-Adapter`:
+
+```python
+DEEPSEEK_TOKEN = [
+  "your-token-1",
+  "your-token-2"
+]
+DEEPSEEK_URL = "https://api.deepseek.com/v1"
+```
+
+2. **Write config**
+
+<details>
+<summary>Click to view config example</summary>
+
+```jsonc
+{
+  "EVAL_SUBSET": true,
+  "USE_CHECKPOINT": false,
+  "SUBSET_FILE": "./eval_configs/subset.txt",
+  "CHECKPOINT_FILE": "./eval_configs/finished_scenarios.txt",
+  "INFERENCE_RESULT_DIR": "./infer_results",
+  "B2D_DIR": "/path/to/Bench2Drive/dataset",
+  "ORIGINAL_VQA_DIR": "../Carla_Chain_QA/carla_vqa_gen/vqa_dataset/outgraph",
+  "FRAME_PER_SEC": 10,
+  "LOOK_FUTURE": false
+}
+```
+
+</details>
+
+3. **Run evaluation**
+
+```bash
+python eval.py \
+  --config_dir ./path/to/eval_config.json \
+  --num_workers 4 \
+  --out_dir ./eval_outputs
+```
+
+---
+
+## 📄 License
+
+All assets and code are licensed under **CC-BY-NC-ND**, unless specified otherwise.
