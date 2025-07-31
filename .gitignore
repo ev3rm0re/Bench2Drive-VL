@@ -218,3 +218,7 @@ startup/*
 /DriveLangVis/*.json
 /DriveLangVis/*.yaml
 /DriveLangVis/*log*
+configs/
+eval_v1/
+output/
+*docker.sh

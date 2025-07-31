@@ -133,6 +133,7 @@ class InferenceWorker:
         if self.in_carla:
             self.use_bev = self.configs.INFERENCE_BASICS['USE_BEV']
             self.port = self.configs.port
+            self.host = self.configs.host
         self.use_base64 = self.configs.use_base64
         
         self.frame_rate = self.configs.TASK_CONFIGS['FRAME_PER_SEC']
@@ -442,8 +443,8 @@ class InferenceWorker:
                 "conversation": [b.to_dict() for b in curr_context]
             }
             try:
-                print_debug(f"[debug] try asking http://localhost:{self.port}/interact")
-                response = requests.post(f"http://localhost:{self.port}/interact", json=payload)
+                print_debug(f"[debug] try asking http://{self.host}:{self.port}/interact")
+                response = requests.post(f"http://{self.host}:{self.port}/interact", json=payload)
                 print_debug(f"[debug] ask_response, response: {response}")
                 response = response.json()['response']
                 print_debug(f"[debug] final response = {response}")

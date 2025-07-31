@@ -58,6 +58,7 @@ DEFAULT_CHAIN =  {
 }
 
 DEFAULT_PORT = 7023
+DEFALT_HOST = "localhost"
 
 class InferConfig:
     def __init__(self, config_path=None, in_carla=False):
@@ -66,6 +67,7 @@ class InferConfig:
         self.INFERENCE_BASICS = DEFAULT_INFERENCE_BASICS if not in_carla else DEFAULT_CARLA_INFERENCE_BASICS
         self.CHAIN = DEFAULT_CHAIN
         self.port = DEFAULT_PORT
+        self.host = DEFALT_HOST
         self.use_base64 = False
         self.order = []
         self.prev = {}
@@ -172,6 +174,9 @@ class InferConfig:
         if 'PORT' in loaded_config and self.in_carla:
             self.port = loaded_config['PORT']
         
+        if 'HOST' in loaded_config and self.in_carla:
+            self.host = loaded_config['HOST']
+        
         if 'USE_BASE64' in loaded_config:
             self.use_base64 = loaded_config['USE_BASE64']
         
@@ -188,7 +193,8 @@ class InferConfig:
         print(f"INFERENCE_BASICS: {self.INFERENCE_BASICS}")
         print(f"CHAIN: {self.CHAIN}")
         if self.in_carla:
-            print(f"PORT: {self.port}")
+            print(f"VLM PORT: {self.port}")
+            print(f"VLM HOST: {self.host}")
 
     def save_configs(self):
         data = {}
