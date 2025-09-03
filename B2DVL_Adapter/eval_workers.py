@@ -97,7 +97,7 @@ class EvalWorker:
         self.subset_file = self.configs.CONFIGS['SUBSET_FILE']
         self.checkpoint_file = self.configs.CONFIGS['CHECKPOINT_FILE']
         self.frame_rate = self.configs.CONFIGS['FRAME_PER_SEC']
-        self.look_future = self.configs.CONFIGS['LOOK_FUTURE']
+        self.look_future = False # self.configs.CONFIGS['LOOK_FUTURE']
 
         self.llm_client = DeepseekInterface(DEEPSEEK_TOKEN, DEEPSEEK_URL)
         self.future_window = 20

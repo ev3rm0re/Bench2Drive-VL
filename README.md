@@ -263,8 +263,7 @@ DEEPSEEK_URL = "https://api.deepseek.com/v1"
   "INFERENCE_RESULT_DIR": "./infer_results",
   "B2D_DIR": "/path/to/Bench2Drive/dataset",
   "ORIGINAL_VQA_DIR": "../Carla_Chain_QA/carla_vqa_gen/vqa_dataset/outgraph",
-  "FRAME_PER_SEC": 10,
-  "LOOK_FUTURE": false
+  "FRAME_PER_SEC": 10
 }
 ```
 
