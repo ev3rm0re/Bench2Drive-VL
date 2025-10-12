@@ -25,7 +25,7 @@ class QAsGenerator():
     all_qa_pairs = []
 
     def __init__(self, args, worker_index, scenario_subset):
-        self.in_carla = os.environ.get('VQA_GEN', 0)
+        self.in_carla = int(os.environ.get('VQA_GEN', 0))
         self.worker_index = worker_index
 
         print(f"Worker {worker_index} gets scenarios: {scenario_subset}")
