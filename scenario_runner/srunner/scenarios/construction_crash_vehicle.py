@@ -127,7 +127,6 @@ class ConstructionObstacle(BasicScenario):
         spawn_transform.location += carla.Location(x=displacement * r_vec.x, y=displacement * r_vec.y, z=0.2)
         spawn_transform.rotation.yaw += 90
         signal_prop = CarlaDataProvider.request_new_actor('static.prop.warningconstruction', spawn_transform)
-        self.pass_scenario_actor(signal_prop, spawn_transform) # for vqa gen
         if not signal_prop:
             raise ValueError("Couldn't spawn the indication prop asset")
         signal_prop.set_simulate_physics(False)
@@ -184,6 +183,8 @@ class ConstructionObstacle(BasicScenario):
             static = CarlaDataProvider.request_new_actor(
                 _prop_names[key], spawn_transform)
             static.set_simulate_physics(False)
+            if key == "warning_sign":
+                self.pass_scenario_actor(static, spawn_transform) # for vqa gen
             self.other_actors.append(static)
 
             self._construction_transforms.append([static, transform])
