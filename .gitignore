@@ -218,3 +218,9 @@ startup/*
 /DriveLangVis/*.json
 /DriveLangVis/*.yaml
 /DriveLangVis/*log*
+*/configs/**
+configs/
+carla/
+eval_v1/
+.egg-cache/
+*docker.sh

@@ -2,6 +2,7 @@ MODEL_MAP = {
     "gt": "VLMInterface",
     "LLaVANeXT": "LLaVANeXTInterface",
     "Qwen2.5VL": "Qwen25Interface",
+    "Qwen2.5VLA": "Qwen25VLAInterface",
     "api": "VLMAPIInterface",
     "Gemma": "GemmaInterface",
     "Janus-Pro": "JanusProInterface",
@@ -30,6 +31,9 @@ def get_model_interface(model_name):
     elif model_name == "Qwen2.5VL":
         from .qwen25 import Qwen25Interface
         return Qwen25Interface()
+    elif model_name == "Qwen2.5VLA":
+        from .qwen25_vla import Qwen25VLAInterface
+        return Qwen25VLAInterface()
     elif model_name == "api":
         from .vlm_api import VLMAPIInterface
         return VLMAPIInterface()

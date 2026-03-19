@@ -29,6 +29,12 @@ export TEAM_CONFIG=$6
 export CHECKPOINT_ENDPOINT=$7
 export SAVE_PATH=$8
 
+if [ -n "${12}" ]; then
+    HOST_ARG="--host=${12}"
+else
+    HOST_ARG=""
+fi
+
 CUDA_VISIBLE_DEVICES=${GPU_RANK} PYTHONFAULTHANDLER=1 python ${LEADERBOARD_ROOT}/leaderboard/leaderboard_evaluator_local.py \
 --routes=${ROUTES} \
 --repetitions=${REPETITIONS} \
@@ -39,6 +45,7 @@ CUDA_VISIBLE_DEVICES=${GPU_RANK} PYTHONFAULTHANDLER=1 python ${LEADERBOARD_ROOT}
 --debug=${DEBUG_CHALLENGE} \
 --record=${RECORD_PATH} \
 --resume=${RESUME} \
+${HOST_ARG} \
 --port=${PORT} \
 --traffic-manager-port=${TM_PORT} \
 --gpu-rank=${GPU_RANK} \
