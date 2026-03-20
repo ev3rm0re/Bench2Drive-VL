@@ -30,6 +30,9 @@ def generate_condition(anno_path, qid, special_state_str=None):
             condition += "The ego vehicle is driving at the speed of " +\
                         f"{anno['speed']:.1f} m/s, and it wants to "
             
+            if anno['speed'] < 0.1:
+                condition += "make sure there are no obstacles ahead before moving to "
+
             distance_to_command_near = math.sqrt(math.pow((anno['x_command_near'] - anno['x']), 2) + math.pow((anno['y_command_near'] - anno['y']), 2))
 
             distance_to_command_far = math.sqrt(math.pow((anno['x_command_far'] - anno['x']), 2) + math.pow((anno['y_command_far'] - anno['y']), 2))

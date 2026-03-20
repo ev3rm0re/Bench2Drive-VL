@@ -32,7 +32,7 @@ def get_model_interface(model_name):
         from .qwen25 import Qwen25Interface
         return Qwen25Interface()
     elif model_name == "Qwen2.5VLA":
-        from .qwen25_vla import Qwen25VLAInterface
+        from .qwen25vla import Qwen25VLAInterface
         return Qwen25VLAInterface()
     elif model_name == "api":
         from .vlm_api import VLMAPIInterface

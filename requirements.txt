@@ -1,5 +1,5 @@
 cython
-numba==0.48.0
+numba
 addict
 packaging
 Pillow==9.3.0
@@ -23,7 +23,7 @@ networkx
 ipython
 opencv-python
 seaborn
-numpy==1.20.0
+numpy
 einops
 casadi
 torchmetrics

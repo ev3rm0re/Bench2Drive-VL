@@ -44,6 +44,7 @@ import time
 import random
 from datetime import datetime
 import pathlib
+import shlex
 
 
 sensors_to_icons = {
@@ -230,12 +231,39 @@ class LeaderboardEvaluator(object):
         Prepares the simulation by getting the client, and setting up the world and traffic manager settings
         """
         self.carla_path = os.environ["CARLA_ROOT"]
-        args.port = find_free_port(args.port)
-        cmd1 = f"{os.path.join(self.carla_path, 'CarlaUE4.sh')} -RenderOffScreen -nosound -carla-rpc-port={args.port} -graphicsadapter={args.gpu_rank}"
-        self.server = subprocess.Popen(cmd1, shell=True, preexec_fn=os.setsid)
-        print(cmd1, self.server.returncode, flush=True)
-        atexit.register(os.killpg, self.server.pid, signal.SIGKILL)
-        time.sleep(30)
+        if os.environ.get("EXTERNAL_CARLA") == "1":
+            print(f"[carla] Using external carla server. Expecting it at port {args.port}", flush=True)
+        else:
+            args.port = find_free_port(args.port)
+            extra_args = os.environ.get("CARLA_EXTRA_ARGS", "")
+            cmd1 = f"{os.path.join(self.carla_path, 'CarlaUE4.sh')} -RenderOffScreen -nosound -quality-level=Low -carla-rpc-port={args.port} -graphicsadapter={args.gpu_rank} {extra_args}".strip()
+
+            launch_env = os.environ.copy()
+            # In headless mode, X11 forwarding can interfere with render thread startup.
+            launch_env["DISPLAY"] = ""
+            launch_env["SDL_VIDEODRIVER"] = "offscreen"
+            launch_env["XDG_RUNTIME_DIR"] = launch_env.get("XDG_RUNTIME_DIR", f"/tmp/runtime-{os.getuid()}")
+            os.makedirs(launch_env["XDG_RUNTIME_DIR"], exist_ok=True)
+
+            self.carla_log_path = os.environ.get("CARLA_SERVER_LOG", f"/tmp/carla_server_{args.port}.log")
+            self._carla_log_handle = open(self.carla_log_path, "a", buffering=1)
+            self.server = subprocess.Popen(
+                shlex.split(cmd1),
+                shell=False,
+                preexec_fn=os.setsid,
+                env=launch_env,
+                stdout=self._carla_log_handle,
+                stderr=self._carla_log_handle,
+            )
+            print(f"[carla] launch cmd: {cmd1}", flush=True)
+            print(f"[carla] pid={self.server.pid}, log={self.carla_log_path}", flush=True)
+            atexit.register(os.killpg, self.server.pid, signal.SIGKILL)
+            time.sleep(30)
+
+            early_exit_code = self.server.poll()
+            if early_exit_code is not None:
+                print(f"[carla] exited early with code {early_exit_code}. See log: {self.carla_log_path}", flush=True)
+                raise RuntimeError(f"CARLA server failed to stay alive (exit={early_exit_code})")
             
         attempts = 0
         num_max_restarts = 20

@@ -11,6 +11,7 @@ import gzip
 from collections import deque
 from agents.navigation.local_planner import RoadOption
 import math
+import re
 import numpy as np
 import carla
 import json
@@ -441,6 +442,41 @@ class AutoPilot(autonomous_agent_local.AutonomousAgent):
 
         is_ready = True
         qdict50_list = None
+        vla_direct_action = None
+
+        def _parse_direct_action(vla_answer):
+            if isinstance(vla_answer, dict):
+                if vla_answer.get('type') != 'direct_action':
+                    return None
+                try:
+                    steer = float(vla_answer.get('steer', 0.0))
+                    throttle = float(vla_answer.get('throttle', 0.0))
+                    brake = float(vla_answer.get('brake', 0.0))
+                except Exception:
+                    return None
+                steer = max(-1.0, min(1.0, steer))
+                throttle = max(0.0, min(1.0, throttle))
+                brake = max(0.0, min(1.0, brake))
+                return {'steer': steer, 'throttle': throttle, 'brake': brake}
+
+            if isinstance(vla_answer, str):
+                steer_match = re.search(r'<\s*steer_\s*([-+]?\d*\.?\d+)\s*>', vla_answer, flags=re.IGNORECASE)
+                throttle_match = re.search(r'<\s*throttle_\s*([-+]?\d*\.?\d+)\s*>', vla_answer, flags=re.IGNORECASE)
+                brake_match = re.search(r'<\s*brake_\s*([-+]?\d*\.?\d+)\s*>', vla_answer, flags=re.IGNORECASE)
+                if steer_match and throttle_match and brake_match:
+                    steer_val = float(steer_match.group(1))
+                    if abs(steer_val) > 1.0: steer_val /= 100.0
+                    throttle_val = float(throttle_match.group(1))
+                    if throttle_val > 1.0: throttle_val /= 100.0
+                    brake_val = float(brake_match.group(1))
+                    if brake_val > 1.0: brake_val /= 100.0
+                    
+                    steer = max(-1.0, min(1.0, steer_val))
+                    throttle = max(0.0, min(1.0, throttle_val))
+                    brake = max(0.0, min(1.0, brake_val))
+                    return {'steer': steer, 'throttle': throttle, 'brake': brake}
+
+            return None
 
         # Get the current speed and target speed
         tick_data = self.tick_autopilot(input_data)
@@ -553,9 +589,11 @@ class AutoPilot(autonomous_agent_local.AutonomousAgent):
 
                 qdict50_list = find_qdict_by_id(50, json_content)
                 if qdict50_list is not None:
-                    dir_cmd, spd_cmd = extract_key_list(qdict50_list[0]['VLM_answer'])
+                    vla_answer = qdict50_list[0].get('VLM_answer')
+                    vla_direct_action = _parse_direct_action(vla_answer)
+                    dir_cmd, spd_cmd = extract_key_list(str(vla_answer))
                     dir_cmd_gt, spd_cmd_gt = extract_keys(qdict50_list[0]['A'])
-                    print_debug(f"[debug] doing VLM, VLM's answer: {qdict50_list[0]['VLM_answer']}, dir_cmd_list = {dir_cmd}, spd_cmd_list = {spd_cmd}")
+                    print_debug(f"[debug] doing VLM, VLM's answer: {vla_answer}, dir_cmd_list = {dir_cmd}, spd_cmd_list = {spd_cmd}, vla_direct_action = {vla_direct_action}")
         
         if MINIMAL and 'QA' in vqa_data: # use gt
             qdict50_list = find_qdict_by_id(50, vqa_data)
@@ -697,6 +735,11 @@ class AutoPilot(autonomous_agent_local.AutonomousAgent):
             self._waypoint_planner.route_index:][self.config.tf_first_checkpoint_distance:][::self.config.
                                                                                             points_per_meter]
 
+        # Limit target speed by speed limit
+        if speed_limit is not None and speed_limit > 0.1:
+            # print_debug(f"[debug] Cap target_speed {target_speed:.2f} to speed_limit {speed_limit:.2f}")
+            target_speed = min(target_speed, speed_limit)
+
         # Compute throttle and brake control
         throttle, control_brake = self._longitudinal_controller.get_throttle_and_brake(brake_flag, target_speed, ego_speed)
 
@@ -725,6 +768,21 @@ class AutoPilot(autonomous_agent_local.AutonomousAgent):
         control.throttle = throttle
         control.brake = max(brake_flag, control_brake)
 
+        if vla_direct_action is not None:
+            control.steer = vla_direct_action['steer']
+            control.throttle = vla_direct_action['throttle']
+            control.brake = vla_direct_action['brake']
+
+            # Enforce brake-throttle consistency for direct-action control.
+            if control.brake > 0.2:
+                control.throttle = min(control.throttle, 0.1)
+
+            steer = control.steer
+            throttle = control.throttle
+            control_brake = bool(control.brake > 0.2)
+            target_speed = ego_speed
+            print_debug(f"[debug] override with direct_action: steer={control.steer}, throttle={control.throttle}, brake={control.brake}")
+
         # print(f"[debug] final control: target_speed = {target_speed}, steer = {control.steer}, throttle = {control.throttle}, brake = {control.brake}")
 
         # # for ood [debug]
@@ -746,9 +804,11 @@ class AutoPilot(autonomous_agent_local.AutonomousAgent):
 
         move_to_prevent_block = False
         if self.ego_blocked_for_ticks >= self.config.max_blocked_ticks:
-            control.throttle = 1
-            control.brake = 0
-            move_to_prevent_block = True
+            print_debug(f"[debug] Vehicle blocked for {self.ego_blocked_for_ticks} ticks. Force throttle.")
+            # control.throttle = 1
+            # control.brake = 0
+            # move_to_prevent_block = True
+            pass
         
         print_debug(f"[debug] before adjustment, control: target_speed = {target_speed}, steer = {control.steer}, throttle = {control.throttle}, brake = {control.brake}")
         print_debug(f"[debug] self.junction = {self.junction}, self.last_dir_cmd = {self.last_dir_cmd}, control.brake = {control.brake}")
