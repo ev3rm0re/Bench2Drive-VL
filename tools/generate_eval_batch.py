@@ -30,7 +30,6 @@ def generate_config_and_script(cfg):
             "B2D_DIR": os.path.join(cfg["b2d_root"], name),
             "ORIGINAL_VQA_DIR": os.path.join(cfg["original_vqa_root"], name),
             "FRAME_PER_SEC": cfg["frame_per_sec"],
-            "LOOK_FUTURE": cfg["look_future"]
         }
 
         # Write config JSON

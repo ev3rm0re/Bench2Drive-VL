@@ -1,4 +1,4 @@
-<p align="center"> <img src="./assets/Bench2Drive-VL.png" alt="B2DVL Header" style="max-width: 100%;" /> </p> <h2 align="center"><strong>Full-Stack Software for Closed-Loop Autonomous Driving with Vision Language Models</strong></h2><p align="center">Powered by the <code>DriveCommenter</code> expert model and CARLA simulator. </p> <p align="center"> <a href="https://thinklab-sjtu.github.io/Bench2Drive-VL/">📄 Document</a> | <a href="https://huggingface.co/datasets/Telkwevr/Bench2Drive-VL-base">📁 Dataset</a> </p>
+<p align="center"> <img src="./assets/Bench2Drive-VL.png" alt="B2DVL Header" style="max-width: 100%;" /> </p> <h2 align="center"><strong>Full-Stack Software for Closed-Loop Autonomous Driving with Vision Language Models</strong></h2><p align="center">Powered by the <code>DriveCommenter</code> expert model and CARLA simulator. </p> <p align="center"> <a href="https://thinklab-sjtu.github.io/Bench2Drive-VL/">📄 Document</a> | <a href="https://huggingface.co/datasets/Telkwevr/Bench2Drive-VL-base">📁 Dataset</a> | <a href="https://hub.docker.com/r/meteorcollector/b2dvl_carla">🐳 Docker</a></p>
 
 ## 🧠 Overview
 
@@ -22,10 +22,8 @@ It includes:
 - 🔄 **Closed-Loop Evaluation Benchmark in CARLA**  
   Seamless integration with the CARLA simulator and web-based APIs allows realistic, interactive, and scalable evaluation of VLMs in autonomous driving scenarios.
 
-- 📦 **Docker Support & Detailed Documentation**  
-  Easy-to-use Docker environments and thorough setup guides ensure a smooth installation and testing experience across platforms.
-
-> 🐳 Docker support is on the way...
+- 🐳 **Docker Support & Detailed Documentation**  
+  Easy-to-use Docker environments and thorough setup guides ensure a smooth installation and testing experience across platforms. More information about the Docker can be found in [our Docker document](https://thinklab-sjtu.github.io/Bench2Drive-VL/docs/references/dockers).
 
 <p align="center">
   <img src="./assets/abstract_module.png" alt="B2DVL Modules" style="max-width: 80%;" />
@@ -265,8 +263,7 @@ DEEPSEEK_URL = "https://api.deepseek.com/v1"
   "INFERENCE_RESULT_DIR": "./infer_results",
   "B2D_DIR": "/path/to/Bench2Drive/dataset",
   "ORIGINAL_VQA_DIR": "../Carla_Chain_QA/carla_vqa_gen/vqa_dataset/outgraph",
-  "FRAME_PER_SEC": 10,
-  "LOOK_FUTURE": false
+  "FRAME_PER_SEC": 10
 }
 ```
 

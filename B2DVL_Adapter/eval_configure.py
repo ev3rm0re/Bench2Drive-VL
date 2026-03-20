@@ -10,8 +10,8 @@ DEFAULT_EVAL_CONFIGS = {
     'INFERENCE_RESULT_DIR': '../infer_results/infer_res_for_test',
     'B2D_DIR': '../Bench2Drive-rep',
     "ORIGINAL_VQA_DIR": "../Carla_Chain_QA/carla_vqa_gen/vqa_dataset/outgraph",
-    'FRAME_PER_SEC': 10, # the collection rate of data
-    'LOOK_FUTURE': False, # True if allowing vlm to get answer for some questions earlier than gt, eg. traffic signs
+    'FRAME_PER_SEC': 10 # the collection rate of data
+    # 'LOOK_FUTURE': False, # True if allowing vlm to get answer for some questions earlier than gt, eg. traffic signs
 }
 
 class EvalConfig:
