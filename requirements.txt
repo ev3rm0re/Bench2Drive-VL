@@ -56,11 +56,11 @@ pexpect
 pydantic
 pyephem
 pygame==2.6.1
-PyYAML==6.0
+PyYAML
 rdp==0.8
 roslibpy
 setuptools
-Shapely==1.8.5
+Shapely
 simplejson==3.20.1
 tqdm
 ujson

@@ -361,10 +361,17 @@ class InferenceWorker:
                     extra_condition = generate_condition(vqa_data['anno'], qid, special_state_str)
                     if extra_prompt is not None and extra_prompt != "":
                         extra_condition = extra_prompt + " " + extra_condition
+                    query_meta = {
+                        "anno_file": vqa_data.get("anno"),
+                        "frame_number": frame_number,
+                        "scenario": scenario,
+                        "frame_rate": self.frame_rate,
+                    }
                     question_bubble = create_query(words=question, images=[images],
                                                 frame_number=frame_number, scenario=scenario,
                                                 qid=qid, gt=gt, transform=self.transform,
                                                 extra_words=extra_condition, extra_images=self.images_window[:-1])
+                    question_bubble.transform = query_meta
                     if not self.in_carla:
                         question_bubble = process_bubble_image(question_bubble, self.worker_id, scenario, self.location_dict, vqa_data['anno'])
                     original_dict['actual_Q'] = question_bubble.get_full_words()
@@ -398,10 +405,17 @@ class InferenceWorker:
                     extra_condition = generate_condition(vqa_data['anno'], qid, special_state_str)
                     if extra_prompt is not None and extra_prompt != "":
                         extra_condition = extra_prompt + " " + extra_condition
+                    query_meta = {
+                        "anno_file": vqa_data.get("anno"),
+                        "frame_number": frame_number,
+                        "scenario": scenario,
+                        "frame_rate": self.frame_rate,
+                    }
                     question_bubble = create_query(words=question, images=[images],
                                                 frame_number=frame_number, scenario=scenario,
                                                 qid=qid, gt=gt, transform=self.dataset.transform if not self.in_carla else None,
                                                 extra_words=extra_condition, extra_images=self.images_window[:-1])
+                    question_bubble.transform = query_meta
                     if not self.in_carla:
                         question_bubble = process_bubble_image(question_bubble, self.worker_id, scenario, self.location_dict, vqa_data['anno'])
                     original_dict['actual_Q'] = question_bubble.get_full_words()

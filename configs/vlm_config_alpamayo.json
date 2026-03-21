@@ -1,0 +1,27 @@
+{
+  "TASK_CONFIGS": {
+    "FRAME_PER_SEC": 10
+  },
+  "INFERENCE_BASICS": {
+    "INPUT_WINDOW": 1,
+    "USE_ALL_CAMERAS": true,
+    "USE_BEV": false,
+    "NO_HISTORY_MODE": false
+  },
+  "CHAIN": {
+    "NODE": [50],
+    "EDGE": {
+      "50": []
+    },
+    "INHERIT": {},
+    "USE_GT": []
+  },
+  "CONTROL_RATE": 2,
+  "MODEL_NAME": "Alpamayo-1.5-10B",
+  "MODEL_PATH": "/workspace/Bench2Drive-VL/models/Alpamayo-1.5-10B",
+  "GPU_ID": 2,
+  "PORT": 7023,
+  "IN_CARLA": true,
+  "USE_BASE64": false,
+  "NO_PERC_INFO": false
+}

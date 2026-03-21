@@ -8,7 +8,7 @@ BASE_CHECKPOINT_ENDPOINT=./my_checkpoint # path to the checkpoint file with save
 # If not exist, it will be automatically created.
 SAVE_PATH=./eval_v1/ # the directory where seonsor data is saved.
 GPU_RANK=2 # CARLA GPU, keep different from VLM GPU to avoid render timeout
-VLM_CONFIG=./configs/vlm_config.json
+VLM_CONFIG=./configs/vlm_config_alpamayo.json
 HOST="127.0.0.1"
 PORT=$BASE_PORT
 TM_PORT=$BASE_TM_PORT
