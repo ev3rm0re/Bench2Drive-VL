@@ -32,7 +32,7 @@ def answer_behaviour_questions(self, ego_vehicle, other_vehicles, scene_data, cu
     dir_cmd = DirectionCommand()
 
     # high-level command
-    scenario = scenario.split('_')[0]
+    scenario = (scenario or "CustomScenario").split('_')[0]
 
     # Map command integers to their corresponding string descriptions
     command_int = get_command_int_by_current_measurement(current_measurement=current_measurement,

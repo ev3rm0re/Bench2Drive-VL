@@ -65,7 +65,7 @@ def generate_vehicle_information(self, other_vehicles, ego_vehicle, important_ob
             action (str): Action may lead to collision
         """            
 
-        scenario = scenario.split('_')[0]
+        scenario = (scenario or "CustomScenario").split('_')[0]
 
         # Map command integers to their corresponding string descriptions
         command_int = get_command_int_by_current_measurement(current_measurement=current_measurement,
@@ -889,7 +889,7 @@ def generate_vehicle_information(self, other_vehicles, ego_vehicle, important_ob
     
         return pointing_towards_junction, position_str
 
-    scenario = scenario.split('_')[0]
+    scenario = (scenario or "CustomScenario").split('_')[0]
     # main contents of this function starts here 
     qas_conversation_vehicle = []
 

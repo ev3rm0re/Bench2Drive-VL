@@ -66,6 +66,8 @@ class RouteScenario(BasicScenario):
         self.client = CarlaDataProvider.get_client()
         self.config = config
         self.route = self._get_route(config)
+        self._parked_ids = []
+        self._parked_ids = []
         self.world = world
         self.map = CarlaDataProvider.get_map()
 
@@ -144,12 +146,50 @@ class RouteScenario(BasicScenario):
 
     def _spawn_ego_vehicle(self):
         """Spawn the ego vehicle at the first waypoint of the route"""
-        elevate_transform = self.route[0][0]
-        elevate_transform.location.z += 0.5
+        base_transform = self.route[0][0]
 
-        ego_vehicle = CarlaDataProvider.request_new_actor('vehicle.lincoln.mkz_2020',
-                                                          elevate_transform,
-                                                          rolename='hero')
+        candidates = []
+        # Keep spawn candidates aligned with the lane center to avoid hanging off road edges.
+        base_wp = self.map.get_waypoint(
+            base_transform.location,
+            project_to_road=True,
+            lane_type=carla.LaneType.Driving,
+        )
+
+        lane_transforms = []
+        if base_wp is not None:
+            lane_transforms.append(base_wp.transform)
+
+            for d in [2.0, 4.0, 6.0, 8.0]:
+                nxt = base_wp.next(d)
+                if nxt:
+                    lane_transforms.append(nxt[0].transform)
+
+            for d in [2.0, 4.0, 6.0]:
+                prv = base_wp.previous(d)
+                if prv:
+                    lane_transforms.append(prv[0].transform)
+        else:
+            lane_transforms.append(base_transform)
+
+        for lane_t in lane_transforms:
+            for dz in [0.5, 1.0, 1.5, 2.0]:
+                t = carla.Transform(carla.Location(), lane_t.rotation)
+                t.location.x = lane_t.location.x
+                t.location.y = lane_t.location.y
+                t.location.z = lane_t.location.z + dz
+                candidates.append(t)
+
+        ego_vehicle = None
+        for elevate_transform in candidates:
+            ego_vehicle = CarlaDataProvider.request_new_actor(
+                'vehicle.lincoln.mkz_2020',
+                elevate_transform,
+                rolename='hero'
+            )
+            if ego_vehicle:
+                break
+
         if not ego_vehicle:
             return
 

@@ -1085,6 +1085,18 @@ class PrivilegedRoutePlanner(object):
         import os
         ldb_dir_root = os.environ.get("LEADERBOARD_ROOT", ".")
         file_name_speed_limits = os.path.join(ldb_dir_root, file_name_speed_limits)
+        if not os.path.exists(file_name_speed_limits):
+            # Custom OpenDRIVE maps (e.g. OpenDriveMap) often do not have a precomputed cache.
+            # Use a safe default speed limit so routing can continue.
+            default_kmh = float(os.environ.get("DEFAULT_SPEED_LIMIT_KMH", "30.0"))
+            default_mps = default_kmh / 3.6
+            self.speed_limits = np.full(self.route_points.shape[0], default_mps, dtype=np.float64)
+            print(
+                f"WARNING: Speed-limit cache not found: {file_name_speed_limits}. "
+                f"Falling back to constant {default_kmh:.1f} km/h."
+            )
+            return
+
         file_content = np.load(file_name_speed_limits, allow_pickle=True)
         map_data = file_content.item()
 

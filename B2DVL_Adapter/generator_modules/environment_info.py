@@ -5,7 +5,7 @@ from .hyper_params import *
 def analyze_environment(self, ego, other_vehicles, scene_data, measurements, scenario):
     
     qas_conversation_environment = []
-    scenario = scenario.split('_')[0]
+    scenario = (scenario or "CustomScenario").split('_')[0]
     hazard_list = []
     plan_list = []
     #### weather ####

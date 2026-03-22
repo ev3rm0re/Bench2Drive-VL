@@ -170,6 +170,9 @@ class AgentWrapper(object):
 
         elif type_ == 'sensor.speedometer':
             delta_time = world.get_settings().fixed_delta_seconds
+            if delta_time is None or delta_time <= 0:
+                # Fallback for async worlds where fixed_delta_seconds is unset.
+                delta_time = 0.05
             attributes['reading_frequency'] = 1 / delta_time
             sensor_location = carla.Location()
             sensor_rotation = carla.Rotation()

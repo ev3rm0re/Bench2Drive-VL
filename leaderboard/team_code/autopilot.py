@@ -68,6 +68,16 @@ class AutoPilot(autonomous_agent_local.AutonomousAgent):
         self.route_index = route_index
 
         self.datagen = int(os.environ.get("VQA_GEN", 0)) == 1
+        # Safety switch for direct low-level actions from VLA.
+        # For custom OpenDRIVE maps with narrow elevated lanes, default to route-based control.
+        self.enable_vla_direct_action = int(os.environ.get("ENABLE_VLA_DIRECT_ACTION", 0)) == 1
+        self.strict_vla_control = int(os.environ.get("STRICT_VLA_CONTROL", 0)) == 1
+        self.vla_direct_action_max_deviation_deg = float(
+            os.environ.get("VLA_DIRECT_ACTION_MAX_DEVIATION_DEG", 20.0)
+        )
+        self.custom_max_speed_mps = float(os.environ.get("CUSTOM_MAX_SPEED_MPS", 0.0))
+        self.last_vla_direct_action = None
+        self.last_vla_action_step = -1
 
         print_debug(f"[debug] _vlm_cfg_dir = {self._vlm_cfg_dir}")
         self.config = GlobalConfig(self._vlm_cfg_dir)
@@ -591,6 +601,9 @@ class AutoPilot(autonomous_agent_local.AutonomousAgent):
                 if qdict50_list is not None:
                     vla_answer = qdict50_list[0].get('VLM_answer')
                     vla_direct_action = _parse_direct_action(vla_answer)
+                    if vla_direct_action is not None:
+                        self.last_vla_direct_action = vla_direct_action
+                        self.last_vla_action_step = self.step
                     dir_cmd, spd_cmd = extract_key_list(str(vla_answer))
                     dir_cmd_gt, spd_cmd_gt = extract_keys(qdict50_list[0]['A'])
                     print_debug(f"[debug] doing VLM, VLM's answer: {vla_answer}, dir_cmd_list = {dir_cmd}, spd_cmd_list = {spd_cmd}, vla_direct_action = {vla_direct_action}")
@@ -740,6 +753,9 @@ class AutoPilot(autonomous_agent_local.AutonomousAgent):
             # print_debug(f"[debug] Cap target_speed {target_speed:.2f} to speed_limit {speed_limit:.2f}")
             target_speed = min(target_speed, speed_limit)
 
+        if self.custom_max_speed_mps > 0:
+            target_speed = min(target_speed, self.custom_max_speed_mps)
+
         # Compute throttle and brake control
         throttle, control_brake = self._longitudinal_controller.get_throttle_and_brake(brake_flag, target_speed, ego_speed)
 
@@ -768,7 +784,23 @@ class AutoPilot(autonomous_agent_local.AutonomousAgent):
         control.throttle = throttle
         control.brake = max(brake_flag, control_brake)
 
-        if vla_direct_action is not None:
+        # Strict mode: always follow VLA direct actions. If current tick has none,
+        # reuse the latest one; if no action has ever arrived, hold still safely.
+        if self.strict_vla_control:
+            self.enable_vla_direct_action = True
+            if vla_direct_action is None and self.last_vla_direct_action is not None:
+                vla_direct_action = self.last_vla_direct_action
+
+        direct_action_allowed = (
+            self.enable_vla_direct_action
+            and ego_on_road
+            and abs(deviant_degree) <= self.vla_direct_action_max_deviation_deg
+        )
+
+        if self.strict_vla_control:
+            direct_action_allowed = self.enable_vla_direct_action
+
+        if vla_direct_action is not None and direct_action_allowed:
             control.steer = vla_direct_action['steer']
             control.throttle = vla_direct_action['throttle']
             control.brake = vla_direct_action['brake']
@@ -782,6 +814,22 @@ class AutoPilot(autonomous_agent_local.AutonomousAgent):
             control_brake = bool(control.brake > 0.2)
             target_speed = ego_speed
             print_debug(f"[debug] override with direct_action: steer={control.steer}, throttle={control.throttle}, brake={control.brake}")
+        elif self.strict_vla_control and self.enable_vla_direct_action:
+            # No VLA action available yet: prevent uncontrolled movement from fallback controller.
+            control.steer = 0.0
+            control.throttle = 0.0
+            control.brake = 1.0
+            print_debug("[debug] strict VLA mode active, waiting for first direct_action -> full brake")
+        elif vla_direct_action is not None and (not direct_action_allowed):
+            print_debug(
+                f"[debug] skip direct_action for safety: enable={self.enable_vla_direct_action}, "
+                f"ego_on_road={ego_on_road}, deviant_degree={deviant_degree:.2f}"
+            )
+
+        # Off-road emergency guard for elevated custom maps.
+        if (not ego_on_road) and ego_speed > 0.5:
+            control.throttle = 0.0
+            control.brake = max(float(control.brake), 0.8)
 
         # print(f"[debug] final control: target_speed = {target_speed}, steer = {control.steer}, throttle = {control.throttle}, brake = {control.brake}")
 

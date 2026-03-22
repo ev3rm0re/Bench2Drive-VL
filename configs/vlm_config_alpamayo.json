@@ -19,7 +19,7 @@
   "CONTROL_RATE": 2,
   "MODEL_NAME": "Alpamayo-1.5-10B",
   "MODEL_PATH": "/workspace/Bench2Drive-VL/models/Alpamayo-1.5-10B",
-  "GPU_ID": 2,
+  "GPU_ID": 3,
   "PORT": 7023,
   "IN_CARLA": true,
   "USE_BASE64": false,

@@ -166,7 +166,7 @@ def generate_ego_vehicle_actions(self, ego_vehicle_data, pedestrians, ego_data, 
         if self.last_full_scenario_name != full_scenario_name:
             self.leftmost_pos_of_left_hazard = {}
         self.last_full_scenario_name = full_scenario_name
-        scenario_type = scenario_type.split('_')[0]
+        scenario_type = (scenario_type or "CustomScenario").split('_')[0]
         scenario_name = scenario_type # why is it not unified?
 
         if self.current_measurement_index - self.last_special_move_index > self.scenario_ignore_interval and \
@@ -1404,7 +1404,7 @@ def generate_ego_vehicle_actions(self, ego_vehicle_data, pedestrians, ego_data, 
         multiple_cones = False
         relevant_obj = None
         object_tags = []
-        scenario_name = scenario_name.split('_')[0]
+        scenario_name = (scenario_name or "CustomScenario").split('_')[0]
         change_flag = False
         change_dir = 0
         if ((self.current_measurement_index - self.last_special_move_index > self.scenario_ignore_interval) and \
@@ -1989,7 +1989,7 @@ def generate_ego_vehicle_actions(self, ego_vehicle_data, pedestrians, ego_data, 
             
         relevant_objects = []
         object_tags = []
-        scenario_name = scenario_name.split('_')[0]
+        scenario_name = (scenario_name or "CustomScenario").split('_')[0]
         change_flag = False
         change_dir = 0
 
@@ -2266,7 +2266,7 @@ def generate_ego_vehicle_actions(self, ego_vehicle_data, pedestrians, ego_data, 
     question = "Must the ego vehicle change lane or deviate from the lane now? why?"
     answer = "No, the ego vehicle can stay on its current lane."
 
-    scenario_name = scenario_name.split('_')[0]
+    scenario_name = (scenario_name or "CustomScenario").split('_')[0]
     still_changing_lane_flag = False
     if (obstacle_change_flag or other_change_flag or self.opposite_flag or ood_flag):
         answer = ""

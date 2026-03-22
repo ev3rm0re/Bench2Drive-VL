@@ -329,9 +329,37 @@ class LeaderboardEvaluator(object):
         Load a new CARLA world without changing the settings and provide data to CarlaDataProvider
         """
 
+        import os
+        from carla import OpendriveGenerationParameters
+
         loaded_town = self.client.get_world().get_map().name.split('/')[-1]
+        xodr_path = f"{town}_local.xodr"
         if loaded_town != town:
-            self.world = self.client.load_world(town, reset_settings=False)
+            if os.path.exists(xodr_path):
+                print(f"检测到 {xodr_path} 独立高精地图，正使用生成模式...")
+                with open(xodr_path, 'r') as f:
+                    xodr_content = f.read()
+                # OpenDRIVE maps from external datasets may show raised side walls/artifacts
+                # with default params. Use safer defaults and allow env overrides.
+                vertex_distance = float(os.environ.get("CARLA_ODR_VERTEX_DISTANCE", "1.0"))
+                max_road_length = float(os.environ.get("CARLA_ODR_MAX_ROAD_LENGTH", "50.0"))
+                wall_height = float(os.environ.get("CARLA_ODR_WALL_HEIGHT", "0.0"))
+                additional_width = float(os.environ.get("CARLA_ODR_ADDITIONAL_WIDTH", "0.0"))
+                smooth_junctions = os.environ.get("CARLA_ODR_SMOOTH_JUNCTIONS", "1") == "1"
+                enable_mesh_visibility = os.environ.get("CARLA_ODR_ENABLE_MESH_VISIBILITY", "1") == "1"
+                self.world = self.client.generate_opendrive_world(
+                    xodr_content,
+                    OpendriveGenerationParameters(
+                        vertex_distance=vertex_distance,
+                        max_road_length=max_road_length,
+                        wall_height=wall_height,
+                        additional_width=additional_width,
+                        smooth_junctions=smooth_junctions,
+                        enable_mesh_visibility=enable_mesh_visibility,
+                    )
+                )
+            else:
+                self.world = self.client.load_world(town, reset_settings=False)
         else:
             self.world = self.client.get_world()
 
@@ -357,7 +385,8 @@ class LeaderboardEvaluator(object):
         self.world.tick()
 
         map_name = CarlaDataProvider.get_map().name.split("/")[-1]
-        if map_name != town:
+        xodr_path = f"{town}_local.xodr"
+        if map_name != town and not os.path.exists(xodr_path):
             raise Exception("The CARLA server uses the wrong map!"
                             " This scenario requires the use of map {}".format(town))
 
